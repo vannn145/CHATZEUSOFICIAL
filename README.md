@@ -1,0 +1,232 @@
+# Sistema de Disparo WhatsApp
+
+Sistema automatizado para envio de mensagens via WhatsApp Web para agendamentos médicos, integrado com banco PostgreSQL.
+
+## 🚀 Características
+
+- **Automação WhatsApp Web** via Puppeteer
+- **Integração PostgreSQL** para buscar agendamentos
+- **Interface Web Responsiva** para controle e monitoramento
+- **Disparo em Massa** com controle de intervalo
+- **Sistema de Confirmação** integrado ao banco
+- **Mensagens Personalizáveis** com template padrão
+
+## 📋 Pré-requisitos
+
+- Node.js (v18+)
+- PostgreSQL com as tabelas configuradas
+- Chrome/Chromium instalado
+- Conexão com o banco de dados
+
+## 🏗️ Estrutura do Projeto
+
+```
+disparador/
+├── .env                    # Configurações do ambiente
+├── .github/
+│   └── copilot-instructions.md
+├── index.js               # Servidor principal
+├── package.json           # Dependências e scripts
+├── public/                # Interface web
+│   ├── index.html        # Página principal
+│   └── app.js            # JavaScript da interface
+└── src/
+    ├── routes/
+    │   └── messages.js   # Rotas da API
+    └── services/
+        ├── database.js   # Serviço PostgreSQL
+        └── whatsapp.js   # Serviço WhatsApp Web
+```
+
+## 🗃️ Estrutura do Banco
+
+### Tabela `sadt`
+```sql
+CREATE TABLE sadt (
+    id SERIAL PRIMARY KEY,
+    patient_name VARCHAR(255),
+    tratamento_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Tabela `schedule_v`
+```sql
+CREATE TABLE schedule_v (
+    id INTEGER REFERENCES sadt(id),
+    patient_contacts VARCHAR(20),
+    main_procedure_term VARCHAR(255),
+    confirmed BOOLEAN DEFAULT FALSE
+);
+```
+
+## ⚙️ Configuração
+
+1. **Clone e instale dependências:**
+```bash
+cd disparador
+npm install
+```
+
+2. **Configure o arquivo `.env`:**
+```env
+# Configurações do Banco PostgreSQL
+DB_HOST=100.99.99.36
+DB_PORT=5432
+DB_USER=cdcenter
+DB_PASSWORD=DevZeus@2025
+DB_NAME=postgres
+
+# Configurações do Servidor
+PORT=3000
+
+# Configurações WhatsApp
+WHATSAPP_SESSION_PATH=./whatsapp-session
+```
+
+3. **Inicie o sistema:**
+```bash
+npm start
+```
+
+4. **Acesse a interface:**
+   - Abra http://localhost:3000 no navegador
+
+## 📱 Como Usar
+
+### 1. Conectar WhatsApp
+1. Clique em "Conectar" na interface
+2. Escaneie o QR Code com seu WhatsApp
+3. Aguarde a confirmação de conexão
+
+### 2. Visualizar Agendamentos
+- Os agendamentos pendentes aparecerão automaticamente
+- Use os filtros e checkboxes para selecionar
+
+### 3. Enviar Mensagens
+- **Individual**: Clique no ícone de envio ao lado do agendamento
+- **Em massa**: Selecione múltiplos agendamentos e clique "Enviar Selecionados"
+- **Personalizada**: Digite uma mensagem customizada no campo de texto
+
+### 4. Confirmar Agendamentos
+- Clique no ícone de confirmação para marcar como confirmado no banco
+- Agendamentos confirmados não aparecerão mais na lista
+
+## 🔧 API Endpoints
+
+### WhatsApp
+    - `POST /api/messages/whatsapp/mode` - Alternar entre `web` e `business`
+    - `GET /api/messages/whatsapp/phone-numbers` - (Cloud API) Listar números da WABA
+    - `POST /api/messages/whatsapp/register-phone` - (Cloud API) Tentar registrar/listar
+
+### WhatsApp On-Premises (Business API On-Prem)
+    - `POST /api/messages/waba-onprem/request-code` → Encaminha para `POST /v1/account` (cc, phone_number, method, cert)
+    - `POST /api/messages/waba-onprem/verify`      → Encaminha para `POST /v1/account/verify` (code, cert, pin, vname)
+
+### Agendamentos
+
+### Variáveis de ambiente adicionais
+
+Para Cloud API (já utilizadas):
+
+```
+WHATSAPP_MODE=business
+WHATSAPP_ACCESS_TOKEN=EAAG...
+WHATSAPP_PHONE_NUMBER_ID=771944609345651
+WHATSAPP_BUSINESS_ACCOUNT_ID=1876870716520569
+WHATSAPP_API_VERSION=v18.0
+```
+
+Para On‑Premises (se você tiver o cliente hospedado):
+
+```
+WABA_ONPREM_BASE_URL=https://seu-servidor-waba:443
+WABA_ONPREM_USERNAME=admin
+WABA_ONPREM_PASSWORD=senha
+WABA_ONPREM_CERT_BASE64=coloque_o_cert_em_base64_aqui
+WABA_ONPREM_CC=55
+WABA_ONPREM_PHONE=3431993069
+WABA_ONPREM_METHOD=sms
+```
+- `GET /api/messages/appointments/stats` - Estatísticas
+- `POST /api/messages/appointments/:id/confirm` - Confirmar agendamento
+
+### Mensagens
+- `POST /api/messages/send/:id` - Enviar para agendamento específico
+- `POST /api/messages/send/bulk` - Disparo em massa
+- `POST /api/messages/test` - Teste de mensagem
+
+## 📝 Template de Mensagem Padrão
+
+```
+🏥 *Confirmação de Agendamento*
+
+Olá *[NOME_PACIENTE]*!
+
+Você tem um agendamento marcado:
+📅 *Data:* [DATA]
+🕐 *Horário:* [HORARIO]
+🔬 *Procedimento:* [PROCEDIMENTO]
+
+Para confirmar seu agendamento, responda *SIM*.
+Para reagendar, entre em contato conosco.
+
+_Esta é uma mensagem automática do sistema de agendamentos._
+```
+
+## 🛡️ Segurança e Boas Práticas
+
+- **Intervalo entre mensagens**: 3 segundos para evitar bloqueios
+- **Sessão persistente**: WhatsApp mantém login entre reinicializações
+- **Validação de números**: Verifica números inválidos antes do envio
+- **Log detalhado**: Todas as ações são registradas no console
+
+## 🚨 Troubleshooting
+
+### WhatsApp não conecta
+- Verifique se o Chrome está instalado
+- Limpe a pasta `whatsapp-session`
+- Restart o sistema
+
+### Erro de banco de dados
+- Verifique as credenciais no `.env`
+- Confirme se as tabelas existem
+- Teste a conectividade de rede
+
+### Mensagens não enviadas
+- Verifique o formato dos números (com código do país)
+- Confirme se o WhatsApp está conectado
+- Verifique se os números são válidos
+
+## 🔄 Scripts Disponíveis
+
+- `npm start` - Inicia o sistema
+- `npm run dev` - Modo desenvolvimento
+
+## 🏥 Funcionalidades Específicas para Agendamentos Médicos
+
+- **Busca automática** de agendamentos não confirmados
+- **Formatação de datas** em português brasileiro
+- **Template médico** com informações do procedimento
+- **Sistema de confirmação** integrado ao banco
+- **Estatísticas** de agendamentos confirmados/pendentes
+
+## 📊 Monitoramento
+
+A interface fornece:
+- Status em tempo real do WhatsApp
+- Contador de agendamentos pendentes/confirmados
+- Log visual das mensagens enviadas
+- Controle individual e em massa
+
+## 🤝 Suporte
+
+Para suporte técnico:
+1. Verifique os logs no console
+2. Confirme as configurações do banco
+3. Teste a conectividade WhatsApp
+4. Consulte a documentação da API
+
+---
+
+**Desenvolvido para facilitar a comunicação com pacientes e reduzir faltas em agendamentos médicos.**
