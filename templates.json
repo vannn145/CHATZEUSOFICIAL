@@ -1,0 +1,157 @@
+﻿[dotenv@17.2.3] injecting env (26) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+{
+  "data": [
+    {
+      "name": "confirmacao_personalizada",
+      "parameter_format": "POSITIONAL",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "TEXT",
+          "text": "Confirma├º├úo de agendamento"
+        },
+        {
+          "type": "BODY",
+          "text": "Ol├í, {{1}}!\nVoc├¬ possui um agendamento no CD Center - Uberaba para {{2}} ├ás {{3}} (procedimento: {{4}}).\nPodemos confirmar sua presen├ºa?",
+          "example": {
+            "body_text": [
+              [
+                "MARIANA MORLIM DE CARVALHO",
+                "05/11/2025",
+                "10:00",
+                "ECODOPPLERCARDIOGRAMA TRANSTOR├üCICO"
+              ]
+            ]
+          }
+        },
+        {
+          "type": "FOOTER",
+          "text": "Confirme sua consulta/procedimento nos bot├Áes abaixo"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Confirmado"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Desmarcar"
+            }
+          ]
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "UTILITY",
+      "id": "1520690819141652"
+    },
+    {
+      "name": "desmarcado",
+      "parameter_format": "POSITIONAL",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Agendamento cancelado, para reagendar contate-nos pelo(s) telefone(s) ."
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "PHONE_NUMBER",
+              "text": "CD CENTER UBERABA",
+              "phone_number": "+553498895200"
+            }
+          ]
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "sub_category": "CUSTOM",
+      "id": "1356167776025686"
+    },
+    {
+      "name": "obrigado",
+      "parameter_format": "POSITIONAL",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Obrigado  por confirmar, aguardamos voc├¬ na data e hor├írio agendado."
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "MARKETING",
+      "sub_category": "CUSTOM",
+      "id": "665850616367927"
+    },
+    {
+      "name": "confirmao_de_agendamento",
+      "parameter_format": "POSITIONAL",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "TEXT",
+          "text": "Confirma├º├úo de agendamento"
+        },
+        {
+          "type": "BODY",
+          "text": "Ol├í,  Voc├¬ possui  agendamento(s) consulta / procedimento  a serem realizados no estabelecimento de sa├║de CD Center - Uberaba. Podemos confirmar sua presen├ºa?"
+        },
+        {
+          "type": "FOOTER",
+          "text": "Confirme sua consulta/procedimento nos bot├Áes abaixo"
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            {
+              "type": "QUICK_REPLY",
+              "text": "Confirmado"
+            },
+            {
+              "type": "QUICK_REPLY",
+              "text": "Desmarcar"
+            }
+          ]
+        }
+      ],
+      "language": "pt_BR",
+      "status": "APPROVED",
+      "category": "UTILITY",
+      "sub_category": "CUSTOM",
+      "id": "1258395809385345"
+    },
+    {
+      "name": "hello_world",
+      "parameter_format": "POSITIONAL",
+      "components": [
+        {
+          "type": "HEADER",
+          "format": "TEXT",
+          "text": "Hello World"
+        },
+        {
+          "type": "BODY",
+          "text": "Welcome and congratulations!! This message demonstrates your ability to send a WhatsApp message notification from the Cloud API, hosted by Meta. Thank you for taking the time to test with us."
+        },
+        {
+          "type": "FOOTER",
+          "text": "WhatsApp Business Platform sample message"
+        }
+      ],
+      "language": "en_US",
+      "status": "APPROVED",
+      "category": "UTILITY",
+      "id": "4273844416193864"
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIUzVuMDJ3T1ZAaeHN2UGJtRXA1TEduX05EVEJadm5xOUxQQVFmd3dMQUxTWl9Pc2NNZA2Q2SHdxU1BqdTZAFa3BwWGhhc0d3dGpVaEJhOUdOM2ZAOQVJsNldB",
+      "after": "QVFIU1h1Q3RNbzZAfUm4zUU5mSGZANWi01dXloUU1TUFZAzUGxKWlJUZA3dqSG5jNmxZAdWhiNG53Wm9OUDd5X2RUdnl3aFd0YTdSc1I2OVZA6QkgxSy02ODVJQXpR"
+    }
+  }
+}

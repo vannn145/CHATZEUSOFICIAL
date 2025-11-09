@@ -16,7 +16,11 @@ const { Pool } = require('pg');
     const queries = [
       { name: 'sadt', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'sadt' ORDER BY ordinal_position` },
       { name: 'schedule_v', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'schedule_v' ORDER BY ordinal_position` },
+      { name: 'schedule_mv', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'schedule_mv' ORDER BY ordinal_position` },
       { name: 'schedule', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'schedule' ORDER BY ordinal_position` },
+  { name: 'person', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'person' ORDER BY ordinal_position` },
+  { name: 'schedule_group', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'schedule_group' ORDER BY ordinal_position` },
+      { name: 'contact', sql: `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'contact' ORDER BY ordinal_position` },
     ];
 
     for (const q of queries) {
@@ -35,10 +39,7 @@ const { Pool } = require('pg');
     }
 
     // Try a quick sample: list top 5 rows to inspect candidate keys
-    const samples = [
-      { name: 'sadt', sql: `SELECT * FROM sadt LIMIT 5` },
-      { name: 'schedule_v', sql: `SELECT * FROM schedule_v LIMIT 5` },
-    ];
+    const samples = [];
     for (const s of samples) {
       try {
         const res = await client.query(s.sql);

@@ -123,6 +123,36 @@ Isso criará o server HTTPS e manterá o default atual respondendo ao IP. Ou sej
 - Acesso por IP (http://72.61.217.71) continua mostrando o site antigo (default_server)
 - Acesso por domínio (https://sistemazeus.com.br) aponta para este app Node
 
+### Porta 3000 ocupada? Use 3100
+
+Se já existir um serviço na porta 3000, você pode rodar este app na 3100:
+
+1) Ajuste a porta do app no `.env`:
+
+```
+PORT=3100
+```
+
+2) Use a configuração Nginx alternativa incluída no repo:
+
+```
+sudo cp /opt/disparador/config/nginx/sistemazeus.com.br.3100.conf /etc/nginx/sites-available/sistemazeus.com.br
+sudo ln -sf /etc/nginx/sites-available/sistemazeus.com.br /etc/nginx/sites-enabled/sistemazeus.com.br
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+3) Reinicie o app no PM2 para usar a nova porta:
+
+```
+pm2 restart disparador && pm2 save
+```
+
+4) (Opcional) Emita/atualize o SSL (o certbot ajusta o vhost atual):
+
+```
+sudo certbot --nginx -d sistemazeus.com.br -d www.sistemazeus.com.br
+```
+
 ## 7) Health checks pós‑deploy
 
 - https://sistemazeus.com.br/ → deve carregar a interface

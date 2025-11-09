@@ -1,5 +1,17 @@
 const express = require('express');
 const router = express.Router();
+// Confirma agendamento pelo telefone (usado pelo cron/script)
+router.get('/confirm/:phone', async (req, res) => {
+    try {
+        const phone = req.params.phone;
+        if (!phone) return res.status(400).json({ success: false, message: 'Telefone não informado' });
+        // Chama o método de confirmação do WhatsAppBusiness
+        await whatsappBusiness.processConfirmation(phone, null, null);
+        res.json({ success: true, message: `Confirmação processada para ${phone}` });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 const cronService = require('../services/cron');
 const dbService = require('../services/database');
 const whatsappService = require('../services/whatsapp-hybrid');
@@ -376,7 +388,7 @@ router.post('/send/:id', async (req, res) => {
         // Log envio (se retornou messageId)
         try {
             if (result?.messageId) {
-                await dbService.logOutboundMessage({ appointmentId: Number(id), phone, messageId: result.messageId, type: 'text', templateName: null, status: 'sent' });
+                    await dbService.logOutboundMessage({ appointmentId: Number(id), phone, messageId: result.messageId, type: 'text', templateName: null, status: 'sent' });
             }
         } catch (_) {}
 
@@ -694,7 +706,11 @@ router.post('/send/confirm-template-by-name', async (req, res) => {
         const result = await whatsappBusiness.sendTemplateMessage(phone, name, 'pt_BR', components);
         try {
             if (result?.messageId) {
-                await dbService.logOutboundMessage({ appointmentId: appointment.id, phone, messageId: result.messageId, type: 'template', templateName: name, status: 'sent' });
+                if (appointment && typeof appointment.id === 'number' && result?.messageId) {
+                    if (appointment && typeof appointment.id === 'number' && result?.messageId) {
+                        await dbService.logOutboundMessage({ appointmentId: appointment.id, phone, messageId: result.messageId, type: 'template', templateName: name, status: 'sent' });
+                    }
+                }
             }
         } catch (_) {}
         return res.json({ success: true, data: { patientName, phone, appointment, components, result } });
@@ -806,11 +822,11 @@ router.post('/send/bulk-template', async (req, res) => {
 
                 const result = await whatsappBusiness.sendTemplateMessage(phone, name, 'pt_BR', components);
                 results.push({ id, success: true, messageId: result.messageId, phone, appointment });
-                try {
-                    if (result?.messageId) {
+                if (result?.messageId) {
+                    try {
                         await dbService.logOutboundMessage({ appointmentId: appointment.id, phone, messageId: result.messageId, type: 'template', templateName: name, status: 'sent' });
-                    }
-                } catch (_) {}
+                    } catch (_) {}
+                }
 
                 // Intervalo para evitar rate limiting
                 if (i < appointmentIds.length - 1) {

@@ -2,6 +2,8 @@
 let whatsappConnected = false;
 let selectedAppointments = new Set();
 let appointments = [];
+let currentFilterDate = '';
+let statusesMap = {}; // appointmentId -> { status, updated_at }
 
 // Elementos DOM
 const connectBtn = document.getElementById('connect-btn');
@@ -16,6 +18,7 @@ const statsContainer = document.getElementById('stats-container');
 const sendBulkBtn = document.getElementById('send-bulk-btn');
 const selectedCount = document.getElementById('selected-count');
 const customMessage = document.getElementById('custom-message');
+const useTemplateCheckbox = document.getElementById('use-template');
 const refreshBtn = document.getElementById('refresh-btn');
 const selectAllBtn = document.getElementById('select-all-btn');
 const testMessageBtn = document.getElementById('test-message-btn');
@@ -39,9 +42,32 @@ document.getElementById('send-test-btn').addEventListener('click', sendTestMessa
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
     checkWhatsAppStatus();
+    // Filtro de data (default: amanhã)
+    const filterDateInput = document.getElementById('filter-date');
+    const applyFilterBtn = document.getElementById('apply-filter-btn');
+    if (filterDateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const yyyy = tomorrow.getFullYear();
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        if (!filterDateInput.value) {
+            filterDateInput.value = `${yyyy}-${mm}-${dd}`;
+            currentFilterDate = filterDateInput.value;
+        }
+        if (applyFilterBtn) {
+            applyFilterBtn.addEventListener('click', () => {
+                currentFilterDate = filterDateInput.value || '';
+                loadAppointments();
+            });
+        }
+    }
     
     // Verificar status a cada 5 segundos
     setInterval(checkWhatsAppStatus, 5000);
+
+    // Atualizar status das mensagens a cada 10 segundos
+    setInterval(loadStatuses, 10000);
 
     // Bind On-Prem elements (rendered in DOM now)
     onpremRequestBtn = document.getElementById('onprem-request-btn');
@@ -67,13 +93,20 @@ async function apiCall(endpoint, options = {}) {
             },
             ...options
         });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Erro na requisição');
+        // Ler como texto e tentar parsear JSON para evitar "Unexpected token" em erros HTML
+        const text = await response.text();
+        let data;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (_) {
+            data = { success: false, message: text || 'Erro inesperado' };
         }
-        
+
+        if (!response.ok || data.success === false) {
+            const msg = data.message || `Erro ${response.status}`;
+            throw new Error(`${msg} (em ${endpoint})`);
+        }
+
         return data;
     } catch (error) {
         console.error('Erro na API:', error);
@@ -201,11 +234,33 @@ async function loadData() {
 
 async function loadAppointments() {
     try {
-        const result = await apiCall('/appointments/pending');
+        let endpoint = '/appointments/pending';
+        if (currentFilterDate) {
+            endpoint += `?date=${encodeURIComponent(currentFilterDate)}`;
+        }
+        const result = await apiCall(endpoint);
         appointments = result.data;
         renderAppointments();
+        // Após carregar a lista, buscar status
+        await loadStatuses();
     } catch (error) {
         appointmentsContainer.innerHTML = '<p class="text-danger">Erro ao carregar agendamentos</p>';
+    }
+}
+
+async function loadStatuses() {
+    try {
+        if (!appointments || appointments.length === 0) return;
+        const ids = appointments.map(a => a.id);
+        const result = await apiCall('/appointments/status/batch', {
+            method: 'POST',
+            body: JSON.stringify({ appointmentIds: ids })
+        });
+        statusesMap = result.data || {};
+        // Re-renderiza apenas os badges
+        updateStatusBadges();
+    } catch (e) {
+        // silencioso
     }
 }
 
@@ -239,6 +294,8 @@ function renderAppointments() {
         const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const isSelected = selectedAppointments.has(appointment.id);
         
+        const statusInfo = statusesMap[appointment.id];
+        const statusBadge = renderStatusBadge(statusInfo?.status);
         return `
             <div class="appointment-card card mb-2">
                 <div class="card-body p-3">
@@ -259,6 +316,7 @@ function renderAppointments() {
                             <small class="text-muted">${appointment.main_procedure_term}</small>
                         </div>
                         <div class="col-md-2 text-end">
+                            <span class="message-status" data-apt-id="${appointment.id}">${statusBadge}</span>
                             <button class="btn btn-outline-primary btn-sm" 
                                 onclick="sendSingleMessage(${appointment.id})">
                                 <i class="fas fa-paper-plane"></i>
@@ -330,11 +388,25 @@ async function sendSingleMessage(appointmentId) {
     }
     
     try {
-        const message = customMessage.value.trim() || null;
-        const result = await apiCall(`/send/${appointmentId}`, {
-            method: 'POST',
-            body: JSON.stringify({ customMessage: message })
-        });
+        const wantTemplate = !!useTemplateCheckbox?.checked;
+        const isBusiness = modeSelector.value === 'business';
+        let result;
+
+        if (wantTemplate && isBusiness) {
+            result = await apiCall(`/send/confirm-template/${appointmentId}`, {
+                method: 'POST',
+                body: JSON.stringify({})
+            });
+        } else {
+            if (wantTemplate && !isBusiness) {
+                showAlert('Para usar template, altere o modo para Business API.', 'info');
+            }
+            const message = customMessage.value.trim() || null;
+            result = await apiCall(`/send/${appointmentId}`, {
+                method: 'POST',
+                body: JSON.stringify({ customMessage: message })
+            });
+        }
         
         showAlert(`Mensagem enviada para ${result.data.appointment.patient_name}`, 'success');
     } catch (error) {
@@ -360,16 +432,29 @@ async function sendBulkMessages() {
     sendBulkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
     
     try {
-        const message = customMessage.value.trim() || null;
         const appointmentIds = Array.from(selectedAppointments);
-        
-        const result = await apiCall('/send/bulk', {
-            method: 'POST',
-            body: JSON.stringify({ 
-                appointmentIds, 
-                customMessage: message 
-            })
-        });
+        const wantTemplate = !!useTemplateCheckbox?.checked;
+        const isBusiness = modeSelector.value === 'business';
+        let result;
+
+        if (wantTemplate && isBusiness) {
+            result = await apiCall('/send/bulk-template', {
+                method: 'POST',
+                body: JSON.stringify({ appointmentIds })
+            });
+        } else {
+            if (wantTemplate && !isBusiness) {
+                showAlert('Para usar template, altere o modo para Business API. Enviaremos como texto padrão.', 'info');
+            }
+            const message = customMessage.value.trim() || null;
+            result = await apiCall('/send/bulk', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    appointmentIds, 
+                    customMessage: message 
+                })
+            });
+        }
         
         const { successful, failed, total } = result.data;
         showAlert(
@@ -508,4 +593,24 @@ async function verifyOnPremCode() {
         showAlert('Número verificado com sucesso!', 'success');
         console.log('On-Prem verify result:', res);
     } catch (e) {}
+}
+
+function renderStatusBadge(status) {
+    if (!status) return '<span class="badge bg-secondary">sem envio</span>';
+    const map = {
+        sent: { cls: 'bg-info text-dark', label: 'enviada' },
+        delivered: { cls: 'bg-primary', label: 'entregue' },
+        read: { cls: 'bg-success', label: 'lida' },
+        failed: { cls: 'bg-danger', label: 'falhou' }
+    };
+    const cfg = map[status] || { cls: 'bg-secondary', label: status };
+    return `<span class="badge ${cfg.cls}">${cfg.label}</span>`;
+}
+
+function updateStatusBadges() {
+    document.querySelectorAll('.message-status').forEach(el => {
+        const id = parseInt(el.getAttribute('data-apt-id'));
+        const status = statusesMap[id]?.status;
+        el.innerHTML = renderStatusBadge(status);
+    });
 }

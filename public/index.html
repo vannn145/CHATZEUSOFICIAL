@@ -110,6 +110,13 @@
                             <div class="col-md-8">
                                 <textarea id="custom-message" class="form-control" rows="4" 
                                     placeholder="Mensagem personalizada (deixe vazio para usar o padrão)"></textarea>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="use-template">
+                                    <label class="form-check-label" for="use-template">
+                                        Usar template de confirmação aprovado (recomendado na Business API)
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block">Template utilizado: <code>confirmacao_personalizada</code> (pt_BR)</small>
                             </div>
                             <div class="col-md-4">
                                 <div class="d-grid gap-2">
@@ -133,8 +140,15 @@
                         <h5 class="mb-0">
                             <i class="fas fa-calendar-check"></i> Agendamentos Pendentes
                         </h5>
-                        <div class="loading">
-                            <i class="fas fa-spinner fa-spin"></i> Carregando...
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm" style="width: 240px;">
+                                <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                                <input type="date" id="filter-date" class="form-control">
+                                <button class="btn btn-outline-secondary" id="apply-filter-btn">Filtrar</button>
+                            </div>
+                            <div class="loading ms-3">
+                                <i class="fas fa-spinner fa-spin"></i> Carregando...
+                            </div>
                         </div>
                     </div>
                     <div class="card-body" id="appointments-container">

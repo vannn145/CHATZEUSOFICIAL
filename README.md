@@ -219,6 +219,34 @@ A interface fornece:
 - Log visual das mensagens enviadas
 - Controle individual e em massa
 
+## ⏱️ Cron de busca e disparo automático
+
+O sistema inclui um cron opcional que busca novos agendamentos na view `schedule_v` e envia automaticamente o template de confirmação.
+
+Como habilitar:
+
+1. Configure no `.env`:
+
+```
+CRON_ENABLED=true
+CRON_INTERVAL_MS=60000         # Frequência de varredura (1 min)
+CRON_LOOKBACK_DAYS=1           # Cobertura de inserções atrasadas (passado)
+CRON_LOOKAHEAD_DAYS=14         # Janela futura de agendamentos
+CRON_BATCH_SIZE=30             # Máximo por ciclo
+DEFAULT_CONFIRM_TEMPLATE_NAME=confirmacao_personalizada
+DEFAULT_CONFIRM_TEMPLATE_LOCALE=pt_BR
+```
+
+2. Inicie o servidor (`npm start`). Ao subir, o cron inicia e faz um ciclo imediato.
+
+Rotas de administração:
+
+- `GET /api/messages/cron/status` → Status do cron (habilitado, rodando, última execução)
+- `POST /api/messages/cron/run` → Disparo manual imediato de um ciclo
+
+Deduplicação:
+- O cron não reenvia para agendamentos que já possuem registro na tabela `message_logs` com `type='template'` e `status` diferente de `failed`.
+
 ## 🤝 Suporte
 
 Para suporte técnico:

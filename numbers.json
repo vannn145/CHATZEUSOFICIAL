@@ -1,0 +1,21 @@
+﻿[dotenv@17.2.3] injecting env (26) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+{
+  "data": [
+    {
+      "id": "874988639026228",
+      "display_phone_number": "+55 34 3199-3069",
+      "verified_name": "CD Center",
+      "code_verification_status": "VERIFIED",
+      "platform_type": "NOT_APPLICABLE",
+      "throughput": {
+        "level": "NOT_APPLICABLE"
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIU3hQNkFKWU1qYlBEdGNoQ1B2WUNEeDQ3S3IzVU0zaGJmQWZA3MUhjai1XR2hyR21ueG13OHN3U3dDc3N1eFFTWjgZD",
+      "after": "QVFIU3hQNkFKWU1qYlBEdGNoQ1B2WUNEeDQ3S3IzVU0zaGJmQWZA3MUhjai1XR2hyR21ueG13OHN3U3dDc3N1eFFTWjgZD"
+    }
+  }
+}

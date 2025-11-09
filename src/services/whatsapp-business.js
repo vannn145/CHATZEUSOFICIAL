@@ -139,6 +139,37 @@ class WhatsAppBusinessService {
             const cleanNumber = to.replace(/\D/g, '');
             const tplName = templateName || process.env.DEFAULT_CONFIRM_TEMPLATE_NAME || 'confirmacao_personalizada';
             const lang = languageCode || process.env.DEFAULT_CONFIRM_TEMPLATE_LOCALE || 'pt_BR';
+            // Se não vier componentes, força botões de confirmação/desmarcação
+            let templateComponents = components;
+            if (!components || !components.length) {
+                templateComponents = [
+                    {
+                        type: 'body',
+                        parameters: [
+                            { type: 'text', text: 'Paciente' },
+                            { type: 'text', text: 'Data' },
+                            { type: 'text', text: 'Hora' },
+                            { type: 'text', text: 'Procedimento' }
+                        ]
+                    },
+                    {
+                        type: 'button',
+                        sub_type: 'quick_reply',
+                        index: '0',
+                        parameters: [
+                            { type: 'payload', payload: 'confirm' }
+                        ]
+                    },
+                    {
+                        type: 'button',
+                        sub_type: 'quick_reply',
+                        index: '1',
+                        parameters: [
+                            { type: 'payload', payload: 'cancel' }
+                        ]
+                    }
+                ];
+            }
             const payload = {
                 messaging_product: 'whatsapp',
                 to: cleanNumber,
@@ -146,12 +177,9 @@ class WhatsAppBusinessService {
                 template: {
                     name: tplName,
                     language: { code: lang },
+                    components: templateComponents
                 }
             };
-            if (components && components.length) {
-                payload.template.components = components;
-            }
-
             const response = await axios.post(
                 `${this.baseURL}/${this.phoneNumberId}/messages`,
                 payload,
@@ -163,7 +191,6 @@ class WhatsAppBusinessService {
                     httpsAgent: this.httpsAgent
                 }
             );
-
             console.log(`✅ Template '${tplName}' enviado para ${cleanNumber}`);
             return {
                 success: true,
@@ -327,7 +354,15 @@ class WhatsAppBusinessService {
             const dbService = require('./database');
             const apt = await dbService.getLatestPendingAppointmentByPhone(phoneNumber);
             if (apt && apt.id) {
-                await dbService.confirmAppointment(apt.id);
+                // Tenta confirmar no banco
+                try {
+                    await dbService.confirmAppointment(apt.id);
+                    console.log(`✅ Banco atualizado: agendamento ${apt.id} confirmado.`);
+                } catch (dbError) {
+                    console.error(`❌ Erro ao confirmar agendamento no banco: ${dbError.message}`);
+                    await this.sendMessage(phoneNumber, '⚠️ Ocorreu um erro ao confirmar seu agendamento. Por favor, tente novamente ou entre em contato.');
+                    return;
+                }
                 if (apt.treatment_id) {
                     try {
                         await dbService.updateWhatsappStatusForTreatment(apt.treatment_id, this.statusMap.confirmed, {
@@ -335,6 +370,7 @@ class WhatsAppBusinessService {
                             incomingMessageId: messageId,
                             messageBody: this.extractIncomingText(incomingMessage)
                         });
+                        console.log(`✅ Status WhatsApp atualizado para tratamento ${apt.treatment_id}`);
                     } catch (statusError) {
                         console.log('⚠️  Falha ao atualizar status WhatsApp:', statusError.message);
                     }
@@ -353,7 +389,7 @@ class WhatsAppBusinessService {
                 console.log(`ℹ️ Confirmação sem match de agendamento para ${phoneNumber}`);
             }
         } catch (error) {
-            console.error('Erro ao processar confirmação:', error.response?.data || error.message);
+            console.error('❌ Erro geral ao processar confirmação:', error.response?.data || error.message);
         }
     }
 
